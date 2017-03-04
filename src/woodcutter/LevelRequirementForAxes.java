@@ -1,4 +1,4 @@
-package iChopper;
+package woodcutter;
 
 public class LevelRequirementForAxes extends LocationClass {
     private int _axeID;

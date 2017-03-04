@@ -1,4 +1,4 @@
-package iChopper;
+package woodcutter;
 
 import java.util.List;
 import org.osbot.rs07.api.map.Area;

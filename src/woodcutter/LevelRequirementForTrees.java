@@ -1,4 +1,4 @@
-package iChopper;
+package woodcutter;
 
 public class LevelRequirementForTrees extends LocationClass {
     private int _treeID;

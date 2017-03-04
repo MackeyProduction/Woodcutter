@@ -1,7 +1,6 @@
-package iChopper;
+package woodcutter;
 
-import org.osbot.rs07.api.map.Area;
-import org.osbot.rs07.api.map.Position;
+import org.tbot.wrappers.Area;
 
 public class constants {
     public static final String[] TREE_NAMES = {"Tree", "Oak", "Willow", "Yew"};
