@@ -1,5 +1,6 @@
 package woodcutter;
 
+import org.tbot.internal.event.EventManager;
 import org.tbot.methods.*;
 import org.tbot.methods.walking.PathGenerator;
 import org.tbot.methods.walking.Walking;
@@ -166,7 +167,7 @@ public class iChopper extends AbstractScript {
                 // Interacting with tree
                 //RS2Object tree = objects.closest(treeList);
                 if (treeList.size() > 0) {
-                    RS2Object tree = treeList.get(Script.random(treeList.size()));
+                    GameObject tree = treeList.get(Random.nextInt(treeList.size()));
                     InteractionEvent interactTree = new InteractionEvent(tree, "Chop down");
                     execute(interactTree);
 
@@ -203,7 +204,7 @@ public class iChopper extends AbstractScript {
                         break;
                     case 10:
                         if (hopWorlds) {
-                            if (playerInArea(locations.getTreeArea()) && !playerInArea(locations.getBankArea()) && players.getAll().stream().count() > maxPlayers) {
+                            if (playerInArea(locations.getTreeArea()) && !playerInArea(locations.getBankArea()) && Players.getLoaded().length > maxPlayers) {
                                 Game.hopRandomF2P();
                             }
                         }
@@ -303,7 +304,7 @@ public class iChopper extends AbstractScript {
         int min = Integer.MAX_VALUE;
         Area nearestArea = list.get(0).getBankArea();
         for (int i = 0; i < list.size(); i++) {
-            distance = player.getLocation().distance(list.get(i).getBankArea().getPositions().get(i));
+            distance = player.getLocation().distance(list.get(i).getBankArea().getTileArray()[i]);
             if (distance < min) {
                 min = distance;
                 nearestArea = list.get(i).getBankArea();
