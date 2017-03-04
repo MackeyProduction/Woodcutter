@@ -1,13 +1,17 @@
 package woodcutter;
 
 import org.tbot.client.GameObject;
+import org.tbot.client.ItemStorage;
+import org.tbot.client.Node;
 import org.tbot.client.Player;
 import org.tbot.internal.AbstractScript;
 import org.tbot.internal.Manifest;
 import org.tbot.internal.ScriptCategory;
 import org.tbot.internal.handlers.LogHandler;
 import org.tbot.methods.tabs.Equipment;
+import org.tbot.methods.tabs.Inventory;
 import org.tbot.util.requirements.EquipmentRequirement;
+import org.tbot.util.requirements.ItemRequirement;
 import org.tbot.wrappers.Area;
 import org.tbot.wrappers.Item;
 
@@ -91,7 +95,7 @@ public class iChopper extends AbstractScript {
         if (checkInventoryItems(constants.AXES)) {
             usedAxe = getCurrentAxe();
             if (!Equipment.contains(usedAxe) && requiredAttackLevel <= currentAttackLevel) {
-                equipment.equip(EquipmentSlot.HANDS, usedAxe);
+                Inventory.getFirst(usedAxe).click();
                 axeInHand = true;
             }
         }
