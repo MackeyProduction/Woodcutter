@@ -124,7 +124,7 @@ public class iChopper extends AbstractScript {
         }
 
         // Player isn't animating?
-        if (!player.isAnimating() && !player.isMoving()) {
+        if (player.getAnimation() == -1 && !player.isMoving()) {
             return State.CHOP;
         }
         return State.SLEEP;
@@ -168,18 +168,13 @@ public class iChopper extends AbstractScript {
                 //RS2Object tree = objects.closest(treeList);
                 if (treeList.size() > 0) {
                     GameObject tree = treeList.get(Random.nextInt(treeList.size()));
-                    InteractionEvent interactTree = new InteractionEvent(tree, "Chop down");
-                    execute(interactTree);
 
-                    // Sleeping while interacting
-                    new ConditionalSleep(1000, 800) {
-
-                        @Override
-                        public boolean condition() throws InterruptedException {
-                            return interactTree.isWorking();
+                    if (tree != null) {
+                        tree.interact("Chop down");
+                        while (player.getAnimation() != -1) {
+                            sleep(800, 1000);
                         }
-
-                    }.sleep();
+                    }
                 }
                 break;
             case WALK:
@@ -216,11 +211,13 @@ public class iChopper extends AbstractScript {
                         Mouse.move(0, 0);
                         break;
                     case 80:
-                        boolean woodcuttingHover = skills.hoverSkill(Skills.Skill.WOODCUTTING);
-                        sleep(Random.nextInt(800, 1200));
+                        Widgets.openTab(Widgets.TAB_STATS);
+                        WidgetChild widget = Widgets.getWidgetByText("Woodcutting");
+                        boolean woodcuttingHover = Mouse.move(widget.getX(), widget.getY());
+                        sleep(800, 1200);
 
                         if (woodcuttingHover) {
-                            tabs.open(Tab.INVENTORY);
+                            Widgets.openTab(Widgets.TAB_INVENTORY);
                         }
                         break;
                 }
