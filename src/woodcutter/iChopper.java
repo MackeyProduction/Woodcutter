@@ -316,10 +316,10 @@ public class iChopper extends AbstractScript {
     private void loadGUI() throws InterruptedException {
         // Open GUI
         g = new GUI();
-        g.setVisible(true);
+        g.frame.setVisible(true);
 
         // Sleeping while GUI is visible
-        while (g.isVisible()) {
+        while (g.frame.isVisible()) {
             sleep(100);
         }
 

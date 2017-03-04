@@ -41,7 +41,7 @@ public class GUI {
     private JButton btnIntelligentChoppingInfo;
     private JComboBox cbLocation;
 
-    private JFrame frame = new JFrame("GUI");
+    JFrame frame = new JFrame("GUI");
     private iChopper _start;
     private DefaultListModel modelAvailableTrees = new DefaultListModel();
     private DefaultListModel modelAddedTrees = new DefaultListModel();
