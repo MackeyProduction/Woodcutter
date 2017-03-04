@@ -1,6 +1,10 @@
 package woodcutter;
 
 import org.tbot.methods.*;
+import org.tbot.methods.walking.PathGenerator;
+import org.tbot.methods.walking.Walking;
+import org.tbot.methods.web.Web;
+import org.tbot.methods.web.nodes.WebNode;
 import org.tbot.util.Filter;
 import org.tbot.wrappers.*;
 import org.tbot.client.ItemStorage;
@@ -178,20 +182,21 @@ public class iChopper extends AbstractScript {
                 }
                 break;
             case WALK:
-                getWalking().webWalk(currentLocation);
+                Walking.walkTileMM(currentLocation.getCentralTile());
+                //getWalking().webWalk(currentLocation);
                 break;
             case SLEEP:
-                sleep(random(600, 800));
+                sleep(Random.nextInt(600, 800));
                 break;
             case ANTIBAN:
-                switch (Script.random(100)) {
+                switch (Random.nextInt(100)) {
                     case 0:
                         if (antiMod) {
-                            Player moderator = players.getPlayers().closestThatContains("Mod");
+                            Player moderator = Players.getLoaded(p -> p.getName().startsWith("Mod"))[0];
 
                             if (moderator != null) {
                                 if (moderator.isOnScreen()) {
-                                    worlds.hopToF2PWorld();
+                                    Game.hopRandomF2P();
                                 }
                             }
                         }
@@ -199,19 +204,19 @@ public class iChopper extends AbstractScript {
                     case 10:
                         if (hopWorlds) {
                             if (playerInArea(locations.getTreeArea()) && !playerInArea(locations.getBankArea()) && players.getAll().stream().count() > maxPlayers) {
-                                worlds.hopToF2PWorld();
+                                Game.hopRandomF2P();
                             }
                         }
                         break;
                     case 40:
-                        camera.moveYaw(Script.random(180));
+                        Camera.setAngle(Random.nextInt(180));
                         break;
                     case 60:
-                        mouse.move(0, 0);
+                        Mouse.move(0, 0);
                         break;
                     case 80:
-                        boolean woodcuttingHover = skills.hoverSkill(Skill.WOODCUTTING);
-                        sleep(Script.random(800, 1200));
+                        boolean woodcuttingHover = skills.hoverSkill(Skills.Skill.WOODCUTTING);
+                        sleep(Random.nextInt(800, 1200));
 
                         if (woodcuttingHover) {
                             tabs.open(Tab.INVENTORY);
