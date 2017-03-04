@@ -1,9 +1,10 @@
 package woodcutter;
 
-import org.tbot.client.GameObject;
+import org.tbot.methods.*;
+import org.tbot.util.Filter;
+import org.tbot.wrappers.*;
 import org.tbot.client.ItemStorage;
 import org.tbot.client.Node;
-import org.tbot.client.Player;
 import org.tbot.internal.AbstractScript;
 import org.tbot.internal.Manifest;
 import org.tbot.internal.ScriptCategory;
@@ -12,12 +13,12 @@ import org.tbot.methods.tabs.Equipment;
 import org.tbot.methods.tabs.Inventory;
 import org.tbot.util.requirements.EquipmentRequirement;
 import org.tbot.util.requirements.ItemRequirement;
-import org.tbot.wrappers.Area;
-import org.tbot.wrappers.Item;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Manifest(authors = "choice96", name = "iChopper", description = "Intelligent Chopper", version = 1, category = ScriptCategory.WOODCUTTING)
 public class iChopper extends AbstractScript {
@@ -55,6 +56,8 @@ public class iChopper extends AbstractScript {
     private final Font treeFont = new Font("Arial", 1, 12);
     private final Color fontColor = new Color(255, 255, 0);
 
+    GUI g;
+
     @Override
     public boolean onStart() {
         LogHandler.log("Script started.");
@@ -72,14 +75,14 @@ public class iChopper extends AbstractScript {
             treeToChop = lvlRequirement.getLevelRequirementForTree(woodcuttingLevel).getTreeName();
             locations = locationMain.getLocation(treeToChop);
             bestAxe = lvlRequirement.getLevelRequirementForAxe(woodcuttingLevel).getAxeName();
-            woodcuttingLevel = skills.getDynamic(Skill.WOODCUTTING);
+            woodcuttingLevel = Skills.getCurrentLevel(Skills.Skill.WOODCUTTING);
         }
-        player = getPlayers().myPlayer();
+        player = Players.getLocal();
         currentLocation = locations.getTreeArea();
         requiredAttackLevel = lvlRequirement.getLevelRequirementForAxe(currentAttackLevel).getAttackLevel();
 
         // Inventory is full?
-        if (getInventory().isFull()) {
+        if (Inventory.isFull()) {
             currentLocation = locations.getBankArea();
             // Dropping
             if (powerchoppingEnabled) {
@@ -106,12 +109,12 @@ public class iChopper extends AbstractScript {
         }
 
         // Axe isn't in inventory?
-        if (!checkInventoryItems(constants.AXES) && !equipment.isWearingItem(EquipmentSlot.WEAPON)) {
+        if (!checkInventoryItems(constants.AXES) && Equipment.getItemInSlot(Equipment.SLOTS_WEAPON) != null) {
             return State.BANK;
         }
 
         // Player animating?
-        if (player.isAnimating()) {
+        if (player.getAnimation() != -1) {
             return State.ANTIBAN;
         }
 
@@ -124,6 +127,101 @@ public class iChopper extends AbstractScript {
 
     @Override
     public int loop() {
+        switch (getState()) {
+            case DROP:
+                Inventory.dropAllExcept(constants.AXES);
+                break;
+            case BANK:
+                log("bla...");
+                // Check if bank is open
+                if (Bank.isOpen()) {
+                    // Axe isn't in inventory?
+                    if (!checkInventoryItems(constants.AXES)) {
+                        // Axe in bank?
+                        if (checkBankItems(constants.AXES)) {
+                            Bank.withdraw(getCurrentAxe(), 1);
+                        }
+                    } else {
+                        // Desosit all except the current axe
+                        Bank.depositAllExcept(getCurrentAxe());
+                    }
+                } else {
+                    Bank.open();
+                }
+                break;
+            case CHOP:
+                // Get all trees
+                if (!g.getAddedTrees().isEmpty()) {
+                    treeList = g.getAddedTrees();
+                    log("Chopping...");
+                } else {
+                    treeList = getAllTrees(treeToChop, currentLocation);
+                    log("Test...");
+                }
+
+                // Interacting with tree
+                //RS2Object tree = objects.closest(treeList);
+                if (treeList.size() > 0) {
+                    RS2Object tree = treeList.get(Script.random(treeList.size()));
+                    InteractionEvent interactTree = new InteractionEvent(tree, "Chop down");
+                    execute(interactTree);
+
+                    // Sleeping while interacting
+                    new ConditionalSleep(1000, 800) {
+
+                        @Override
+                        public boolean condition() throws InterruptedException {
+                            return interactTree.isWorking();
+                        }
+
+                    }.sleep();
+                }
+                break;
+            case WALK:
+                getWalking().webWalk(currentLocation);
+                break;
+            case SLEEP:
+                sleep(random(600, 800));
+                break;
+            case ANTIBAN:
+                switch (Script.random(100)) {
+                    case 0:
+                        if (antiMod) {
+                            Player moderator = players.getPlayers().closestThatContains("Mod");
+
+                            if (moderator != null) {
+                                if (moderator.isOnScreen()) {
+                                    worlds.hopToF2PWorld();
+                                }
+                            }
+                        }
+                        break;
+                    case 10:
+                        if (hopWorlds) {
+                            if (playerInArea(locations.getTreeArea()) && !playerInArea(locations.getBankArea()) && players.getAll().stream().count() > maxPlayers) {
+                                worlds.hopToF2PWorld();
+                            }
+                        }
+                        break;
+                    case 40:
+                        camera.moveYaw(Script.random(180));
+                        break;
+                    case 60:
+                        mouse.move(0, 0);
+                        break;
+                    case 80:
+                        boolean woodcuttingHover = skills.hoverSkill(Skill.WOODCUTTING);
+                        sleep(Script.random(800, 1200));
+
+                        if (woodcuttingHover) {
+                            tabs.open(Tab.INVENTORY);
+                        }
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
         return 100;
     }
 
@@ -132,59 +230,49 @@ public class iChopper extends AbstractScript {
         LogHandler.log("Script finished.");
     }
 
-    private boolean canChop(Area area, RS2Object obj) {
+    private boolean canChop(Area area, GameObject obj) {
         return area.contains(obj);
     }
 
     private boolean playerInArea(Area area) {
-        return area.contains(getPlayers().myPlayer().getPosition());
+        return area.contains(Players.getLocal().getRegionX(), Players.getLocal().getRegionY());
     }
 
-    private RS2Object getCurrentTree(List<RS2Object> trees) {
-        RS2Object pos = trees.get(0);
+    private GameObject getCurrentTree(List<GameObject> trees) {
+        GameObject pos = trees.get(0);
         for (int i = 0; i < trees.size(); i++) {
-            if (trees.get(i).getPosition().equals(getAllTrees(treeToChop).get(i).getPosition())) {
+            if (trees.get(i).getLocation().equals(getAllTrees(treeToChop).get(i).getLocation())) {
                 pos = trees.get(i);
             }
         }
         return pos;
     }
 
-    private List<RS2Object> getAllTrees(String treeName) {
-        // http://osbot.org/forum/topic/72612-looking-for-a-ground-item-within-a-certain-distance-from-player/?p=803493
-        // http://osbot.org/forum/topic/92723-how-to-ensure-player-only-chops-in-specified-area/?hl=distance
-        // http://osbot.org/forum/topic/96505-osbot-scripting-basics-and-snippets/
-        // Filtert die Objekte nach einer ID und der Distanz von der Position des Spielers
-        // stream(): Datenstrom mit allen Elementen des Objektes.
-        // collect(): Anhand der Klasse Collectors wird durch die Methode toList(), der Datenstrom in eine Liste umgewandelt.
-        // distinct(): Sortiert doppelte Einträge aus.
-        treeList = getObjects().getAll().stream().
-                // Lambda Expression: obj -> ...
-                        filter(obj -> obj.getName().equalsIgnoreCase(treeName)).
-                        distinct().
-                        collect(Collectors.toList());
+    private List<GameObject> getAllTrees(String treeName) {
+        treeList = Arrays.asList(GameObjects.getLoaded(obj -> obj.getName().equalsIgnoreCase(treeName)));
+
         return treeList;
     }
 
-    public List<RS2Object> getAllTrees(String treeName, Position position) {
-        return getAllTrees(treeName).stream().filter(obj -> obj.getName().equalsIgnoreCase(treeName) && obj.getPosition().equals(position)).collect(Collectors.toList());
+    public List<GameObject> getAllTrees(String treeName, Tile position) {
+        return getAllTrees(treeName).stream().filter(obj -> obj.getName().equalsIgnoreCase(treeName) && obj.getLocation().equals(position)).collect(Collectors.toList());
     }
 
-    public List<RS2Object> getAllTrees(String treeName, Area location) {
+    public List<GameObject> getAllTrees(String treeName, Area location) {
         return getAllTrees(treeName).stream().filter(obj -> obj.getName().equalsIgnoreCase(treeName) && canChop(location, obj)).collect(Collectors.toList());
     }
 
-    public List<RS2Object> getAllTrees(String treeName, int distance) {
-        return getAllTrees(treeName).stream().filter(obj -> obj.getName().equalsIgnoreCase(treeName) && player.getPosition().distance(obj.getPosition()) < distance).collect(Collectors.toList());
+    public List<GameObject> getAllTrees(String treeName, int distance) {
+        return getAllTrees(treeName).stream().filter(obj -> obj.getName().equalsIgnoreCase(treeName) && player.getLocation().distance(obj.getLocation()) < distance).collect(Collectors.toList());
     }
 
     private boolean checkInventoryItems(String[] items) {
-        itemList.addAll(Arrays.asList(getInventory().getItems()));
+        itemList.addAll(Arrays.asList(Inventory.getItems()));
         return compare(items, itemList);
     }
 
     private boolean checkBankItems(String[] items) {
-        itemList.addAll(Arrays.asList(getBank().getItems()));
+        itemList.addAll(Arrays.asList(Bank.getItems()));
         return compare(items, itemList);
     }
 
@@ -210,7 +298,7 @@ public class iChopper extends AbstractScript {
         int min = Integer.MAX_VALUE;
         Area nearestArea = list.get(0).getBankArea();
         for (int i = 0; i < list.size(); i++) {
-            distance = player.getPosition().distance(list.get(i).getBankArea().getPositions().get(i));
+            distance = player.getLocation().distance(list.get(i).getBankArea().getPositions().get(i));
             if (distance < min) {
                 min = distance;
                 nearestArea = list.get(i).getBankArea();
@@ -221,7 +309,7 @@ public class iChopper extends AbstractScript {
 
     private void loadGUI() throws InterruptedException {
         // Open GUI
-        g = new GUI(this);
+        g = new GUI();
         g.setVisible(true);
 
         // Sleeping while GUI is visible

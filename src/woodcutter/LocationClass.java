@@ -1,7 +1,7 @@
 package woodcutter;
 
 import java.util.List;
-import org.osbot.rs07.api.map.Area;
+import org.tbot.wrappers.Area;
 
 public class LocationClass {
     private int _treeID;
