@@ -1,23 +1,14 @@
 package woodcutter;
 
-import org.tbot.internal.event.EventManager;
 import org.tbot.methods.*;
-import org.tbot.methods.walking.PathGenerator;
 import org.tbot.methods.walking.Walking;
-import org.tbot.methods.web.Web;
-import org.tbot.methods.web.nodes.WebNode;
-import org.tbot.util.Filter;
 import org.tbot.wrappers.*;
-import org.tbot.client.ItemStorage;
-import org.tbot.client.Node;
 import org.tbot.internal.AbstractScript;
 import org.tbot.internal.Manifest;
 import org.tbot.internal.ScriptCategory;
 import org.tbot.internal.handlers.LogHandler;
 import org.tbot.methods.tabs.Equipment;
 import org.tbot.methods.tabs.Inventory;
-import org.tbot.util.requirements.EquipmentRequirement;
-import org.tbot.util.requirements.ItemRequirement;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -27,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Manifest(authors = "choice96", name = "iChopper", description = "Intelligent Chopper", version = 1, category = ScriptCategory.WOODCUTTING)
 public class iChopper extends AbstractScript {
+    //<editor-fold defaultstate="collapsed" desc="Declaration">
     // Declarate variables
     private boolean powerchoppingEnabled = false;
     private boolean axeInHand = false;
@@ -62,17 +54,32 @@ public class iChopper extends AbstractScript {
     private final Color fontColor = new Color(255, 255, 0);
 
     GUI g;
+    //</editor-fold>
 
+    //<editor-fold defaultstate="collapsed" desc="Main">
     @Override
     public boolean onStart() {
-        LogHandler.log("Script started.");
+        // Get my player
+        player = Players.getLocal();
+        currentAttackLevel = Skills.getCurrentLevel(Skills.Skill.ATTACK);
+        woodcuttingLevel = Skills.getCurrentLevel(Skills.Skill.WOODCUTTING);
+        LogHandler.log(lvlRequirement.getLevelRequirementForAxe(currentAttackLevel).getAttackLevel());
+
+        // Loading the GUI
+        loadGUI();
+
+        if (!intelligentChopping) {
+            locations = locationMain.getLocation(treeToChop, locationForChop);
+        }
+
+        LogHandler.log(String.format("Hello %s, I hope you enjoy using my script.", player.getName()));
         return true;
     }
 
     private enum State {
 
         CHOP, DROP, BANK, WALK, SLEEP, ANTIBAN
-    };
+    }
 
     private State getState() {
         // Is intelligent chopping enabled?
@@ -134,7 +141,13 @@ public class iChopper extends AbstractScript {
     public int loop() {
         switch (getState()) {
             case DROP:
-                Inventory.dropAllExcept(constants.AXES);
+                int id = 0;
+                for (int i = 0; i < constants.AXES.length; i++) {
+                    String axe = constants.AXES[i];
+                    Item currentAxe = Inventory.getItems(item -> item.getName().equalsIgnoreCase(axe))[i];
+                    id = currentAxe.getID();
+                }
+                Inventory.dropAllExcept(id);
                 break;
             case BANK:
                 log("bla...");
@@ -230,9 +243,23 @@ public class iChopper extends AbstractScript {
 
     @Override
     public void onFinish() {
-        LogHandler.log("Script finished.");
+        LogHandler.log("Thank you for using my script.");
     }
 
+    public void onPaint(Graphics2D g) {
+        g.setFont(treeFont);
+        g.setColor(fontColor);
+
+        Rectangle bounds;
+
+        if (guiTree != null) {
+            bounds = new Rectangle(guiTree.getWorldX(), guiTree.getWorldY(), guiTree.getModel().getLocalX(), guiTree.getModel().getLocalY());
+            g.drawRect(bounds.x, bounds.y, bounds.getBounds().width, bounds.getBounds().height);
+        }
+    }
+    //</editor-fold>
+
+    //<editor-fold defaultstate="collapsed" desc="Private methods">
     private boolean canChop(Area area, GameObject obj) {
         return area.contains(obj);
     }
@@ -310,7 +337,7 @@ public class iChopper extends AbstractScript {
         return nearestArea;
     }
 
-    private void loadGUI() throws InterruptedException {
+    private void loadGUI() {
         // Open GUI
         g = new GUI();
         g.frame.setVisible(true);
@@ -336,4 +363,5 @@ public class iChopper extends AbstractScript {
             }
         }
     }
+    //</editor-fold>
 }
