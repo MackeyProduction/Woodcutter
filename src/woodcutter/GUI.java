@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Created by Til Anheier on 04.03.2017.
  */
-public class GUI {
+public class GUI extends javax.swing.JFrame {
     private JPanel panelMain;
     private JLabel treeLabel;
     private JComboBox cbTree;
@@ -71,7 +71,7 @@ public class GUI {
                 if ((int)spMaxPlayers.getValue() < 1) {
                     JOptionPane.showMessageDialog(null, "Value of max players have to > 0.");
                 } else {
-                    frame.dispose();
+                    dispose();
                 }
             }
         });
@@ -174,7 +174,7 @@ public class GUI {
     }
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("");
+        JFrame frame = new JFrame("GUI");
         frame.setContentPane(new GUI().panelMain);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.pack();

@@ -339,11 +339,11 @@ public class iChopper extends AbstractScript {
 
     private void loadGUI() {
         // Open GUI
-        g = new GUI();
-        g.frame.setVisible(true);
+        g = new GUI(this);
+        g.setVisible(true);
 
         // Sleeping while GUI is visible
-        while (g.frame.isVisible()) {
+        while (g.isVisible()) {
             sleep(100);
         }
 
